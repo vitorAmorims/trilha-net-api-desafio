@@ -20,7 +20,7 @@ namespace TrilhaApiDesafio.Controllers
         {
             if(string.IsNullOrEmpty(id.ToString()))
             {
-                return BadRequest();
+                return NotFound();
             }
             var resultado = _context.Tarefas.FirstOrDefault(x => x.Id == id);
             if(resultado == null)
@@ -42,7 +42,7 @@ namespace TrilhaApiDesafio.Controllers
         {
             if(string.IsNullOrEmpty(titulo))
             {
-                return BadRequest();
+                return NotFound();
             }
             var resultado = _context.Tarefas.FirstOrDefault(x => x.Titulo.Equals(titulo));
             return Ok(resultado);
