@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using trilha_net_api_desafio.Interfaces;
 using trilha_net_api_desafio.Validator;
 using TrilhaApiDesafio.Context;
 using TrilhaApiDesafio.Models;
@@ -20,6 +21,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IValidator<Tarefa>, TarefaValidator>();
+builder.Services.AddScoped<ITarefasRepository, Tarefa>();
+
 
 var app = builder.Build();
 

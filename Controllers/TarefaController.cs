@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using trilha_net_api_desafio.Interfaces;
 using trilha_net_api_desafio.Validator;
 using TrilhaApiDesafio.Context;
 using TrilhaApiDesafio.Models;
@@ -12,11 +13,11 @@ namespace TrilhaApiDesafio.Controllers
     public class TarefaController : ControllerBase
     {
         private IValidator<Tarefa> _validator;
-        private readonly OrganizadorContext _context;
+        private readonly ITarefasRepository _repository;
 
-        public TarefaController(IValidator<Tarefa> validator, OrganizadorContext context)
+        public TarefaController(IValidator<Tarefa> validator, ITarefasRepository repository)
         {
-            _context = context;
+            _repository = repository;
             _validator = validator;
         }
 
@@ -27,19 +28,20 @@ namespace TrilhaApiDesafio.Controllers
             {
                 return NotFound();
             }
-            var resultado = _context.Tarefas.FirstOrDefault(x => x.Id == id);
-            if (resultado == null)
+
+            var tarefa = _repository.ObterPorId(id);
+            if (tarefa == null)
             {
                 return NotFound();
             }
 
-            return Ok(resultado);
+            return Ok(tarefa);
         }
 
         [HttpGet("ObterTodos")]
         public IActionResult ObterTodos()
         {
-            return Ok(_context.Tarefas.ToList());
+            return Ok(_repository.ObterTodos());
         }
 
         [HttpGet("ObterPorTitulo")]
@@ -49,22 +51,26 @@ namespace TrilhaApiDesafio.Controllers
             {
                 return NotFound();
             }
-            var resultado = _context.Tarefas.FirstOrDefault(x => x.Titulo.Equals(titulo));
-            return Ok(resultado);
+            
+            var tarefa = _repository.ObterPorTitulo(titulo);
+            
+            return Ok(tarefa);
         }
 
         [HttpGet("ObterPorData")]
         public IActionResult ObterPorData(DateTime data)
         {
-            var tarefa = _context.Tarefas.Where(x => x.Data.Date == data.Date);
+            var tarefa = _repository.ObterPorData(data);
+
             return Ok(tarefa);
         }
 
         [HttpGet("ObterPorStatus")]
         public IActionResult ObterPorStatus(EnumStatusTarefa status)
         {
-            var tarefaBanco = _context.Tarefas.FirstOrDefault(x => x.Status.Equals(status));
-            return Ok(tarefaBanco);
+            var tarefa = _repository.ObterPorStatus(status);
+
+            return Ok(tarefa);
         }
 
         [HttpPost]
@@ -89,15 +95,31 @@ namespace TrilhaApiDesafio.Controllers
             if (tarefa.Data == DateTime.MinValue)
                 return BadRequest(new { Erro = "A data da tarefa não pode ser vazia" });
 
-            _context.Tarefas.Add(tarefa);
-            _context.SaveChanges();
+            _repository.Criar(tarefa);
+            
             return CreatedAtAction(nameof(ObterPorId), new { id = tarefa.Id }, tarefa);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Atualizar(int id, Tarefa tarefa)
+        public async Task<IActionResult> Atualizar(int id, Tarefa tarefa)
         {
-            var tarefaBanco = _context.Tarefas.Find(id);
+            List<string> ValidationMessages = new List<string>();
+            var validacao = await _validator.ValidateAsync(tarefa);
+            var response = new ResponseModel();
+            if (!validacao.IsValid)
+            {
+                foreach (var error in validacao.Errors)
+                {
+                    ValidationMessages.Add(error.ErrorMessage);
+                }
+               response.ValidationMessages = ValidationMessages;
+            }
+            if(validacao.Errors.Count > 0)
+            {
+                return BadRequest(ValidationMessages);
+            }
+
+            var tarefaBanco = _repository.ObterPorId(id);
 
             if (tarefaBanco == null)
                 return NotFound();
@@ -109,8 +131,8 @@ namespace TrilhaApiDesafio.Controllers
             tarefaBanco.Descricao = tarefa.Descricao;
             tarefaBanco.Data = tarefa.Data;
             tarefaBanco.Status = tarefa.Status;
-            _context.Tarefas.Update(tarefaBanco);
-            _context.SaveChanges();
+
+            _repository.Atualizar(tarefaBanco);
 
             return Ok();
         }
@@ -118,13 +140,14 @@ namespace TrilhaApiDesafio.Controllers
         [HttpDelete("{id}")]
         public IActionResult Deletar(int id)
         {
-            var tarefaBanco = _context.Tarefas.Find(id);
+            var tarefa = _repository.ObterPorId(id);
 
-            if (tarefaBanco == null)
+            if (tarefa == null)
                 return NotFound();
 
-            _context.Tarefas.Remove(tarefaBanco);
-            _context.SaveChanges();
+            _repository.Deletar(tarefa);
+            _repository.Save();
+
             return NoContent();
         }
     }
