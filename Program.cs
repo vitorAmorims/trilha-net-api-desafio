@@ -1,6 +1,9 @@
 using System.Text.Json.Serialization;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using trilha_net_api_desafio.Validator;
 using TrilhaApiDesafio.Context;
+using TrilhaApiDesafio.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var connection = builder.Configuration.GetConnectionString("ConexaoPadrao");
@@ -15,6 +18,8 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IValidator<Tarefa>, TarefaValidator>();
 
 var app = builder.Build();
 

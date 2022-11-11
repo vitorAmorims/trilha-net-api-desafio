@@ -1,4 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using trilha_net_api_desafio.Validator;
 using TrilhaApiDesafio.Context;
 using TrilhaApiDesafio.Models;
 
@@ -8,22 +11,24 @@ namespace TrilhaApiDesafio.Controllers
     [Route("[controller]")]
     public class TarefaController : ControllerBase
     {
+        private IValidator<Tarefa> _validator;
         private readonly OrganizadorContext _context;
 
-        public TarefaController(OrganizadorContext context)
+        public TarefaController(IValidator<Tarefa> validator, OrganizadorContext context)
         {
             _context = context;
+            _validator = validator;
         }
 
         [HttpGet("{id}")]
         public IActionResult ObterPorId(int id)
         {
-            if(string.IsNullOrEmpty(id.ToString()))
+            if (string.IsNullOrEmpty(id.ToString()))
             {
                 return NotFound();
             }
             var resultado = _context.Tarefas.FirstOrDefault(x => x.Id == id);
-            if(resultado == null)
+            if (resultado == null)
             {
                 return NotFound();
             }
@@ -40,7 +45,7 @@ namespace TrilhaApiDesafio.Controllers
         [HttpGet("ObterPorTitulo")]
         public IActionResult ObterPorTitulo(string titulo)
         {
-            if(string.IsNullOrEmpty(titulo))
+            if (string.IsNullOrEmpty(titulo))
             {
                 return NotFound();
             }
@@ -63,8 +68,24 @@ namespace TrilhaApiDesafio.Controllers
         }
 
         [HttpPost]
-        public IActionResult Criar(Tarefa tarefa)
+        public async Task<IActionResult> Criar(Tarefa tarefa)
         {
+            List<string> ValidationMessages = new List<string>();
+            var validacao = await _validator.ValidateAsync(tarefa);
+            var response = new ResponseModel();
+            if (!validacao.IsValid)
+            {
+                foreach (var error in validacao.Errors)
+                {
+                    ValidationMessages.Add(error.ErrorMessage);
+                }
+               response.ValidationMessages = ValidationMessages;
+            }
+            if(validacao.Errors.Count > 0)
+            {
+                return BadRequest(ValidationMessages);
+            }
+
             if (tarefa.Data == DateTime.MinValue)
                 return BadRequest(new { Erro = "A data da tarefa não pode ser vazia" });
 
@@ -90,7 +111,7 @@ namespace TrilhaApiDesafio.Controllers
             tarefaBanco.Status = tarefa.Status;
             _context.Tarefas.Update(tarefaBanco);
             _context.SaveChanges();
-            
+
             return Ok();
         }
 
