@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using trilha_net_api_desafio.Extensions;
 using trilha_net_api_desafio.Interfaces;
 using trilha_net_api_desafio.Validator;
 using TrilhaApiDesafio.Context;
@@ -23,8 +24,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IValidator<Tarefa>, TarefaValidator>();
 builder.Services.AddScoped<ITarefasRepository, Tarefa>();
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 var app = builder.Build();
+ILogger <Tarefa> logger = app.Services.GetRequiredService<ILogger<Tarefa>>();
+app.ConfigureExceptionHandler(logger);
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

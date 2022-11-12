@@ -30,6 +30,7 @@ namespace TrilhaApiDesafio.Controllers
             }
 
             var tarefa = _repository.ObterPorId(id);
+
             if (tarefa == null)
             {
                 return NotFound();

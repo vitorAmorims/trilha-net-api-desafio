@@ -9,6 +9,7 @@ namespace TrilhaApiDesafio.Models
 {
     public class Tarefa : ITarefasRepository
     {
+        private readonly ILogger<Tarefa>  _logger;
         private readonly OrganizadorContext _context;
         private bool disposed;
         private bool disposing;
@@ -19,9 +20,10 @@ namespace TrilhaApiDesafio.Models
         public DateTime Data { get; set; }
         public EnumStatusTarefa Status { get; set; }
 
-        public Tarefa(OrganizadorContext context)
+        public Tarefa(OrganizadorContext context, ILogger<Tarefa> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public Tarefa()
@@ -31,6 +33,8 @@ namespace TrilhaApiDesafio.Models
 
         public void Atualizar(Tarefa tarefa)
         {
+            _logger.LogInformation($"Atualizando tarefa, ", 
+            DateTime.UtcNow.ToLongTimeString());
             _context.Tarefas.Update(tarefa);
             Save();
         }
@@ -54,6 +58,8 @@ namespace TrilhaApiDesafio.Models
 
         public Tarefa ObterPorId(int id)
         {
+            _logger.LogInformation($"Pesquisando tarefas por Id:{id} ", 
+            DateTime.UtcNow.ToLongTimeString());
             return _context.Tarefas.FirstOrDefault(x => x.Id == id);
         }
 
